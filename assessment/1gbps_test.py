@@ -37,9 +37,25 @@ class WeatherForecast:
             print("File not found. No existing forecast data.")
 
     def write_to_file(self):
+        # Checking if data already exisist in file using the set() it is unique
+        existing_data = set()
+        try: 
+            with open(self.file_name, "r") as file_file:
+                existing_data = set(file_file.readlines())
+        except FileNotFoundError:
+            pass
+
         with open(self.file_name, "a") as file:
+            for forecast_json in existing_data:
+                if forecast_json.strip() in map(json.dumps, self.forecast_data.values()):
+                    file.write(forecast_json)
+            
+            # Adding new forecasts
             for forecast in self.forecast_data.values():
-                file.write(json.dumps(forecast) + '\n')
+                forecast_json = json.dumps(forecast) + '\n'
+                if forecast_json not in existing_data:
+                    file.write(forecast_json)
+                    existing_data.add(forecast_json)
 
     def update_forecast(self):
         while True:
@@ -133,28 +149,10 @@ class WeatherForecast:
                     print("\nCould not find coordinates for the city.")
 
             if input("\nWould you like to continue? (yes/no): ").lower() != "yes":
-                print("Bye, have a good one!")
+                print("\nBye, have a good one!")
                 break
 
 # Usage
 weather_forecast = WeatherForecast("dates.txt")
 weather_forecast.read_from_file()  # Load existing forecast data
 weather_forecast.update_forecast()  # Update forecast data interactively
-
-
-
-
-    def write_to_file(self):
-        # Checking if data already exisist in file using the set() it is unique
-        existing_data = set()
-        try: 
-            with open(self.file_name, "r") as file_file:
-                existing_data = set(file_file.readlines())
-        except FileNotFoundError:
-            pass
-
-        with open(self.file_name, "a") as file:
-            for forecast in self.forecast_data.items():
-                forecast_json = json.dumps(forecast) + '\n'
-                if forecast_json not in existing_data:
-                    file.write(forecast_json)

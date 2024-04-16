@@ -34,12 +34,28 @@ class WeatherForecast:
                     except json.decoder.JSONDecodeError:
                         print("File is empty. No existing forecast data.")
         except FileNotFoundError:
-            print("File not found. No existing forecast data.")
+            pass
 
     def write_to_file(self):
+        # Checking if data already exisist in file using the set() it is unique
+        existing_data = set()
+        try: 
+            with open(self.file_name, "r") as file_file:
+                existing_data = set(file_file.readlines())
+        except FileNotFoundError:
+            pass
+
         with open(self.file_name, "a") as file:
+            for forecast_json in existing_data:
+                if forecast_json.strip() in map(json.dumps, self.forecast_data.values()):
+                    file.write(forecast_json)
+            
+            # Adding new forecasts
             for forecast in self.forecast_data.values():
-                file.write(json.dumps(forecast) + '\n')
+                forecast_json = json.dumps(forecast) + '\n'
+                if forecast_json not in existing_data:
+                    file.write(forecast_json)
+                    existing_data.add(forecast_json)
 
     def update_forecast(self):
         while True:
@@ -61,17 +77,17 @@ class WeatherForecast:
                 except ValueError:
                     print("\nInvalid date format. Make sure to use 'YYYY-MM-DD' format!")
                     continue
-
+            
             city = input("\nWhat city do you want to check? ").capitalize()
 
             found = False
             try:
-                with open("dates.txt", "r") as file:
+                with open(self.file_name, "r") as file:
                     for line in file:
                         dictionary = json.loads(line)
 
                         # Parsing latitude and longitude in dates.txt
-                        latitude =dictionary["latitude"]
+                        latitude = dictionary["latitude"]
                         longitude = dictionary["longitude"]
 
                         # Parsing daily dict in dates.txt
@@ -94,7 +110,9 @@ class WeatherForecast:
                                     print("I do not Know!")
                                     break
             except FileNotFoundError:
-                print("\nFile 'dates.txt' not found. Creating a new file.\n")
+                print(f"\nFile {self.file_name} not found. Creating a new file.\n")
+                with open(self.file_name, "w") as file:
+                    pass
                 found = False
 
             if not found:
@@ -112,8 +130,24 @@ class WeatherForecast:
                     precipitation_sum = daily_precip_sum.get("precipitation_sum", [])
 
                     if precipitation_sum:
-                        self[searched_date] = response_json  # Update forecast data
-                        print("\nForecast updated and saved.")
+                        # Check if forecast data for the same date exists in the file
+                        with open(self.file_name, "r") as file:
+                            existing_data = file.readlines()
+                        existing_city = None
+                        for line in existing_data:
+                            dict_data = json.loads(line)
+                            existing_time = dict_data.get("daily", {}).get("time", [])
+                            if searched_date in existing_time:
+                                existing_city = geocoder.arcgis([dict_data["latitude"], dict_data["longitude"]], method='reverse').city
+                                break
+                        
+                        # Update forecast data if it's not already present or if the city is different
+                        if existing_city != city:
+                            self.forecast_data[searched_date] = response_json
+                            print("\nForecast updated and saved.")
+                            # Write new forecast data to the file
+                            with open(self.file_name, "a") as file:
+                                file.write(json.dumps(response_json) + '\n')
                         for value in precipitation_sum:
                             if value > 0.0:
                                 print(f"\nIt will rain as precipitation value is: {value}")
@@ -127,34 +161,16 @@ class WeatherForecast:
                     else:
                         print("\nNo forecast data available.")
                     
-
-
                 else:
                     print("\nCould not find coordinates for the city.")
 
             if input("\nWould you like to continue? (yes/no): ").lower() != "yes":
-                print("Bye, have a good one!")
+                print("\nBye, have a good one!")
                 break
+
+
 
 # Usage
 weather_forecast = WeatherForecast("dates.txt")
 weather_forecast.read_from_file()  # Load existing forecast data
 weather_forecast.update_forecast()  # Update forecast data interactively
-
-
-
-
-    def write_to_file(self):
-        # Checking if data already exisist in file using the set() it is unique
-        existing_data = set()
-        try: 
-            with open(self.file_name, "r") as file_file:
-                existing_data = set(file_file.readlines())
-        except FileNotFoundError:
-            pass
-
-        with open(self.file_name, "a") as file:
-            for forecast in self.forecast_data.items():
-                forecast_json = json.dumps(forecast) + '\n'
-                if forecast_json not in existing_data:
-                    file.write(forecast_json)

@@ -13,7 +13,7 @@ This program connects to quotable API and uses setitem, getitem and iter functio
 import requests
 
 class QuotableCollection:
-    def __init__(self, tag=None): # tags is needed when in the API call of the website there is something like subcatogory and are like to search for tags for every quote 
+    def __init__(self, tag=None): # tags is needed when in the API call of the website there is something like subcategory and are like to search for tags for every quote 
         self.quotes = self.fetch_quotes(tag)
     
     def fetch_quotes(self, tag):
