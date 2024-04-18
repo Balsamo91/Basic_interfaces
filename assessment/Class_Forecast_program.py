@@ -101,7 +101,7 @@ class WeatherForecast:
                         if searched_date in time and city in geocoder.arcgis([latitude, longitude], method='reverse').city:
                             found = True
                             precip_value = daily.get("precipitation_sum", [])
-                            print(precip_value)
+                            
                             for v in precip_value:
                                 if v > 0.0:
                                     print(f"It will rain as precipitation value is: {v}")
@@ -170,8 +170,6 @@ class WeatherForecast:
             if input("\nWould you like to continue? (yes/no): ").lower() != "yes":
                 print("\nBye, have a good one!")
                 break
-
-
 
 # Usage
 weather_forecast = WeatherForecast("dates.txt")
